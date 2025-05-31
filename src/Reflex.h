@@ -42,8 +42,6 @@ namespace Reflex
 		std::vector<ReflectedProp*> vars;
 		ReflectedTypeData(std::string type_name);
 
-		//static char Create(std::string type_name, BaseObject* e, BaseObject* parent, int& typeID, int& parentTypeID);
-
 		std::string type_name;
 	};
 
@@ -82,9 +80,8 @@ namespace Reflex
 		}
 
 	private:
-		static std::vector<BaseObject*>* s_types;
-		static std::vector<ReflectedTypeData*>* s_reflectionDataList;
-		friend class  ReflectedProp;
+		static std::vector<BaseObject*>* s_types; //this keeps copies of the objects
+		static std::vector<ReflectedTypeData*>* s_reflectionDataList; //this stores per-type metadata
 	};
 }
 
