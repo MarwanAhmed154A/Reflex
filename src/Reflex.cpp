@@ -4,40 +4,34 @@
 
 namespace Reflex
 {
-	std::vector<BaseObject*>*        ReflectionManager::s_types;
+	std::vector<BaseObject*>* ReflectionManager::s_types;
 	std::vector<ReflectedTypeData*>* ReflectionManager::s_reflectionDataList;
 
 	ReflectedProp::ReflectedProp(std::string name, int offset, InspectableType type, int ID) : name(name), offset(offset), type(type) {}
 
-	char ReflectedProp::Create(std::string name, int offset, InspectableType type, int ID)
-	{
-		(*ReflectionManager::s_reflectionDataList)[ID]->vars.push_back(new ReflectedProp(name, offset, type, ID)); //add this prop's metadata to it's owning class's data
-		return '0';
-	}
+	ReflectedTypeData::ReflectedTypeData(std::string type_name) : type_name(type_name){}
 
-
-	ReflectedTypeData::ReflectedTypeData(std::string type_name, BaseObject* e, BaseObject* parent, int& typeID, int& parentTypeID) : type_name(type_name), ent(e)
-	{
-		typeID       = AddedIndex  = ReflectionManager::Add(this) - 1;
-		parentTypeID = parentIndex = parent->GetTypeID();
-	}
-
-	char ReflectedTypeData::Create(std::string type_name, BaseObject* e, BaseObject* parent, int& typeID, int& parentTypeID)
-	{
-		new ReflectedTypeData(type_name, e, parent, typeID, parentTypeID);
-		return '0';
-	}
-
-	int ReflectionManager::Add(ReflectedTypeData* a)
+	char ReflectionManager::AddType(std::string type_name, BaseObject* e, BaseObject* parent, int& typeID, int& parentTypeID)
 	{
 		//initialize lists as ptrs, safety from unkown static-init order and UB, on static defintion lines to avoid multiple assignments of value
-		static std::vector<BaseObject*>*        types              = s_types              = new std::vector<BaseObject*>();
+		static std::vector<BaseObject*>* types = s_types = new std::vector<BaseObject*>();
 		static std::vector<ReflectedTypeData*>* reflectionDataList = s_reflectionDataList = new std::vector<ReflectedTypeData*>();
 
-		s_types->push_back(a->ent);
-		s_reflectionDataList->push_back(a);
-		
-		return (int)s_types->size();
+		ReflectedTypeData* data = new ReflectedTypeData(type_name);
+
+		s_types->push_back(e);
+		s_reflectionDataList->push_back(data);
+
+		typeID       = (int)s_types->size() - 1;
+		parentTypeID = parent->s_TypeID;
+
+		return '0';
+	}
+
+	char ReflectionManager::AddProp(std::string name, int offset, InspectableType type, int ID)
+	{
+		(*s_reflectionDataList)[ID]->vars.push_back(new ReflectedProp(name, offset, type, ID)); //add this prop's metadata to it's owning class's data
+		return '0';
 	}
 
 	std::vector<BaseObject*>* ReflectionManager::GetTypes()

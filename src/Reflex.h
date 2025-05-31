@@ -31,8 +31,6 @@ namespace Reflex
 		ReflectedProp() = default;
 		ReflectedProp(std::string name, int offset, InspectableType type, int ID);
 
-		static char Create(std::string name, int offset, InspectableType type, int ID);
-
 		InspectableType type;
 		std::string name;
 		int offset;
@@ -42,20 +40,18 @@ namespace Reflex
 	{
 	public:
 		std::vector<ReflectedProp*> vars;
-		ReflectedTypeData(std::string type_name, BaseObject* e, BaseObject* parent, int& typeID, int& parentTypeID);
+		ReflectedTypeData(std::string type_name);
 
-		static char Create(std::string type_name, BaseObject* e, BaseObject* parent, int& typeID, int& parentTypeID);
-
-		int AddedIndex, parentIndex;
+		//static char Create(std::string type_name, BaseObject* e, BaseObject* parent, int& typeID, int& parentTypeID);
 
 		std::string type_name;
-		BaseObject* ent;
 	};
 
 	class ReflectionManager
 	{
 	public:
-		static int Add(ReflectedTypeData* a);
+		static char AddType(std::string type_name, BaseObject* e, BaseObject* parent, int& typeID, int& parentTypeID);
+		static char AddProp(std::string name, int offset, InspectableType type, int ID);
 		static std::vector<BaseObject*>* GetTypes();
 		static std::vector<ReflectedProp*>* GetVarsFromType(int ID);
 		static const std::string GetTypeName(int ID);
@@ -86,15 +82,15 @@ namespace Reflex
 		}
 
 	private:
-		static std::vector<BaseObject*>*        s_types;
+		static std::vector<BaseObject*>* s_types;
 		static std::vector<ReflectedTypeData*>* s_reflectionDataList;
 		friend class  ReflectedProp;
 	};
-} 
+}
 
 using namespace Reflex;
 #define REFLECTABLE_CLASS(x, parent)  protected: static int s_parentTypeID; protected: static int s_TypeID; static int s_Size;  static char x##_adder; public: typedef parent Super; virtual int GetTypeID() override {return s_TypeID;} virtual BaseObject* GetCopy(char* binary) {return new x##(*(x##*)binary);} virtual int GetSize() override {return s_Size;} static int s_GetTypeID() {return s_TypeID;}
-#define REFLECT_REGISTER_TYPE(x) int x##::s_parentTypeID = 0; int x##::s_TypeID = 0; char x::x##_adder = *(char*)new ReflectedTypeData(#x, new x, new x##::Super, s_TypeID, s_parentTypeID); int x##::s_Size = sizeof(x);
-#define REFLECT_PROP(type, x, v) static char  v##_in_##x##      = ReflectedProp::Create(#v, offsetof(x, v), type, x##::s_GetTypeID());
+#define REFLECT_REGISTER_TYPE(x) int x##::s_parentTypeID = 0; int x##::s_TypeID = 0; char x::x##_adder = ReflectionManager::AddType(#x, new x, new x##::Super, s_TypeID, s_parentTypeID); int x##::s_Size = sizeof(x);
+#define REFLECT_PROP(type, x, v) static char  v##_in_##x##      = ReflectionManager::AddProp(#v, offsetof(x, v), type, x##::s_GetTypeID());
 #define REFLECTED_PRIV_DECL(type, x, v) static char v##_in_##x##;
-#define REFLECT_PRIV_PROP(type, x, v) char x##::##v##_in_##x##  = ReflectedProp::Create(#v, offsetof(x, v), type, x##::s_GetTypeID());
+#define REFLECT_PRIV_PROP(type, x, v) char x##::##v##_in_##x##  = ReflectionManager::AddProp(#v, offsetof(x, v), type, x##::s_GetTypeID());
