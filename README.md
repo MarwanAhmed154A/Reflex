@@ -13,10 +13,10 @@ Features:
 
 * Simple API for introspection, metadata, and runtime usage
 ---
-Integration
+**Integration:
 
 Just include the Reflex header files in your project. No external dependencies.
 ---
-License
+**License:
 
 This project is licensed under the Apache 2.0 License – feel free to use it in personal and commercial projects with proper credit
