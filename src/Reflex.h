@@ -5,18 +5,28 @@
 
 namespace Reflex
 {
+	//placeholder for Super in BaseObject
+	class S
+	{
+	public:
+		static int s_TypeID;
+		static int s_parentTypeID;
+	};
 	//All reflected types should inherit from this class
 	class BaseObject
 	{
+		typedef S Super;
 	protected:
-		static int  s_TypeID;
-
+		static int s_TypeID;
+		static int s_parentTypeID;
 	public:
 		virtual BaseObject* GetCopy(char* binary) { return nullptr; }
 
+		static int s_GetTypeID() { return 99999999; }
+
 		virtual int GetSize() { return 0; }
 		virtual int GetTypeID() { return 99999999; }
-
+		virtual int GetParentTypeID() {return 99999999;}
 		friend class ReflectionManager;
 	};
 
@@ -42,19 +52,23 @@ namespace Reflex
 		std::vector<ReflectedProp*> vars;
 		ReflectedTypeData(std::string type_name);
 
+		BaseObject* obj;
 		std::string type_name;
 	};
 
 	class ReflectionManager
 	{
 	public:
-		static char AddType(std::string type_name, BaseObject* e, BaseObject* parent, int& typeID, int& parentTypeID);
+		static char AddType(std::string type_name, BaseObject* e, int& typeID);
 		static char AddProp(std::string name, int offset, InspectableType type, int ID);
-		static std::vector<BaseObject*>* GetTypes();
-		static std::vector<ReflectedProp*>* GetVarsFromType(int ID);
+
+		static std::vector<ReflectedTypeData*>* GetTypes();
+		static std::vector<ReflectedProp*>*     GetVarsFromType(int ID);
+
 		static const std::string GetTypeName(int ID);
 		static const std::string GetTypeName(BaseObject*);
-		static BaseObject* GetType(std::string type_name);
+
+		static ReflectedTypeData* GetType(std::string type_name);
 
 		template<typename T>
 		static T* GetVarFromObject(std::string name, BaseObject* obj)
@@ -80,14 +94,14 @@ namespace Reflex
 		}
 
 	private:
-		static std::vector<BaseObject*>* s_types; //this keeps copies of the objects
+		//static std::vector<BaseObject*>* s_types; //this keeps copies of the objects
 		static std::vector<ReflectedTypeData*>* s_reflectionDataList; //this stores per-type metadata
 	};
 }
 
 using namespace Reflex;
-#define REFLECTABLE_CLASS(x, parent)  protected: static int s_parentTypeID; protected: static int s_TypeID; static int s_Size;  static char x##_adder; public: typedef parent Super; virtual int GetTypeID() override {return s_TypeID;} virtual BaseObject* GetCopy(char* binary) {return new x##(*(x##*)binary);} virtual int GetSize() override {return s_Size;} static int s_GetTypeID() {return s_TypeID;}
-#define REFLECT_REGISTER_TYPE(x) int x##::s_parentTypeID = 0; int x##::s_TypeID = 0; char x::x##_adder = ReflectionManager::AddType(#x, new x, new x##::Super, s_TypeID, s_parentTypeID); int x##::s_Size = sizeof(x);
-#define REFLECT_PROP(type, x, v) static char  v##_in_##x##      = ReflectionManager::AddProp(#v, offsetof(x, v), type, x##::s_GetTypeID());
-#define REFLECTED_PRIV_DECL(type, x, v) static char v##_in_##x##;
-#define REFLECT_PRIV_PROP(type, x, v) char x##::##v##_in_##x##  = ReflectionManager::AddProp(#v, offsetof(x, v), type, x##::s_GetTypeID());
+#define REFLECTABLE_CLASS(thisClass, parent)  protected: protected: static int s_TypeID; static int s_Size;  static char thisClass##_adder; public: typedef parent Super; virtual int GetTypeID() override {return s_TypeID;} virtual int GetParentTypeID() override {return Super::s_GetTypeID();} virtual BaseObject* GetCopy(char* binary) {return new thisClass##(*(thisClass##*)binary);} virtual int GetSize() override {return s_Size;} static int s_GetSize() {return s_Size;} static int s_GetTypeID() {return s_TypeID;} static int s_GetParentTypeID() {return Super::s_GetTypeID();}
+#define REFLECT_REGISTER_TYPE(thisClass) int thisClass##::s_parentTypeID = 0; int thisClass##::s_TypeID = 0; char thisClass::thisClass##_adder = ReflectionManager::AddType(#thisClass, new thisClass, s_TypeID); int thisClass##::s_Size = sizeof(thisClass);
+#define REFLECT_PROP(type, thisClass, thisProp) static char  thisProp##_in_##thisClass##      = ReflectionManager::AddProp(#thisProp, offsetof(thisClass, thisProp), type, thisClass##::s_GetTypeID());
+#define REFLECTED_PRIV_DECL(type, thisClass, thisProp) static char thisProp##_in_##thisClass;
+#define REFLECT_PRIV_PROP(type, thisClass, thisProp) char thisClass##::thisProp##_in_##thisClass##  = ReflectionManager::AddProp(#thisProp, offsetof(thisClass, thisProp), type, thisClass##::s_GetTypeID());
